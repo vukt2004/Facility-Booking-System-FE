@@ -1,5 +1,5 @@
 import { Button, Checkbox, Form, Input, Card, Typography, message } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
@@ -30,8 +30,17 @@ const LoginPage = () => {
       alignItems: 'center', 
       background: '#f0f2f5',
       backgroundImage: 'url("https://fpt.edu.vn/Content/images/assets/bg-1.png")', // Ví dụ ảnh nền mờ
-      backgroundSize: 'cover'
+      backgroundSize: 'cover',
+      position: 'relative'
     }}>
+      <Button 
+        type="text" 
+        icon={<ArrowLeftOutlined />}
+        onClick={() => navigate(-1)}
+        style={{ position: 'absolute', top: 20, left: 20, fontSize: 18 }}
+      >
+        Quay lại
+      </Button>
       <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', borderRadius: 12 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{ width: 48, height: 48, background: '#f57224', borderRadius: 8, color: '#fff', fontSize: 24, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>F</div>
