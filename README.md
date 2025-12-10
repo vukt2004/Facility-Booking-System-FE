@@ -1,73 +1,56 @@
-# React + TypeScript + Vite
+# FPTU HCM Multi-campus Facility Booking System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Hệ thống đặt lịch phòng họp, phòng lab, sân thể thao dành cho Sinh viên và Giảng viên tại FPT University (Multi-campus). Hệ thống cung cấp giao diện trực quan để kiểm tra lịch trống, đặt chỗ và quản lý tài nguyên cơ sở vật chất.
 
-Currently, two official plugins are available:
+![Project Status](https://img.shields.io/badge/Status-In%20Development-orange)
+![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20TypeScript%20%7C%20Ant%20Design-blue)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🌟 Tổng quan dự án
 
-## React Compiler
+Dự án nhằm giải quyết vấn đề quản lý và phân bổ tài nguyên phòng ốc tại trường.
+* **Người dùng (Sinh viên/Giảng viên):** Dễ dàng tìm kiếm phòng trống, đặt lịch nhanh chóng và xem lịch sử sử dụng.
+* **Quản trị viên (Admin):** Kiểm soát tài nguyên, duyệt yêu cầu (Approve/Reject) và xem báo cáo thống kê mức độ sử dụng.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Tính năng chính
 
-## Expanding the ESLint configuration
+### Dành cho Sinh viên & Giảng viên (User)
+* **Dashboard:** Xem danh sách phòng theo Campus (Quận 9, Hòa Lạc, Quy Nhơn...).
+* **Booking:** Đặt phòng họp, Lab, sân thể thao với giao diện Lịch (Calendar) trực quan.
+* **Lịch sử:** Theo dõi trạng thái yêu cầu đặt chỗ (Đang chờ, Đã duyệt, Từ chối).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Dành cho Admin
+* **Quản lý Phòng (CRUD):** Thêm, sửa, xóa thông tin phòng, sức chứa, loại phòng.
+* **Phê duyệt:** Xử lý các yêu cầu đặt phòng từ sinh viên/giảng viên.
+* **Báo cáo (Report):** Thống kê tần suất sử dụng, tỷ lệ lấp đầy phòng.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠 Công nghệ sử dụng (Tech Stack)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Dự án được xây dựng với các công nghệ hiện đại, tập trung vào hiệu năng và trải nghiệm người dùng:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+* **Core:** [React 18](https://react.dev/) (Vite Build Tool).
+* **Language:** [TypeScript](https://www.typescriptlang.org/) (Strict typing).
+* **UI Framework:** [Ant Design 5](https://ant.design/) (Hệ thống Design System doanh nghiệp, ổn định và mạnh mẽ).
+* **Routing:** [React Router DOM v6](https://reactrouter.com/).
+* **Icons:** @ant-design/icons.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📂 Cấu trúc dự án
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+```text
+facility-booking-system/
+├── public/              # File tĩnh (Logo, favicon)
+├── src/
+│   ├── assets/          # Hình ảnh, global styles
+│   ├── components/      # Các thành phần tái sử dụng
+│   │   ├── layout/      # Navbar, Sidebar, Footer
+│   │   └── ui/          # Các UI components nhỏ (nếu custom thêm)
+│   ├── pages/           # Các màn hình chính
+│   │   ├── admin/       # Khu vực dành riêng cho Admin
+│   │   ├── BookingPage.tsx
+│   │   ├── LoginPage.tsx
+│   │   └── WelcomePage.tsx
+│   ├── types/           # Định nghĩa TypeScript Interfaces (User, Room, Booking)
+│   ├── App.tsx          # Định tuyến (Routing)
+│   └── main.tsx         # Điểm khởi chạy & Cấu hình Theme Antd
+├── package.json
+├── vite.config.ts
+└── README.md
