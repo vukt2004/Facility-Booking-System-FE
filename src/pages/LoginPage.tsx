@@ -16,8 +16,10 @@ const LoginPage = () => {
     setTimeout(() => {
       setLoading(false);
       message.success('Đăng nhập thành công!');
-      // Logic điều hướng (ví dụ):
-      // Nếu là admin -> navigate('/admin')
+      if (values.email === 'admin@gmail.com' && values.password === '123') {
+        navigate('/admin/dashboard');
+        return;
+      }
       navigate('/booking'); // Tạm thời chuyển sang trang booking
     }, 1500);
   };
@@ -37,7 +39,26 @@ const LoginPage = () => {
         type="text" 
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate(-1)}
-        style={{ position: 'absolute', top: 20, left: 20, fontSize: 18 }}
+        style={{ 
+          position: 'absolute', 
+          top: 20, 
+          left: 20, 
+          fontSize: 16,
+          color: '#f57224',
+          fontWeight: 500,
+          padding: '8px 12px',
+          borderRadius: 6,
+          transition: 'all 0.3s ease',
+          backgroundColor: 'rgba(245, 114, 36, 0.1)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(245, 114, 36, 0.2)';
+          e.currentTarget.style.transform = 'translateX(-4px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(245, 114, 36, 0.1)';
+          e.currentTarget.style.transform = 'translateX(0)';
+        }}
       >
         Quay lại
       </Button>
