@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // URL Backend được lấy từ biến môi trường
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'https://localhost:7175'; 
+const BASE_URL = import.meta.env.VITE_BASE_URL; 
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -10,7 +10,6 @@ const api = axios.create({
   },
 });
 
-// 1. Request Interceptor: Gắn Token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -19,17 +18,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// 2. Response Interceptor: Bóc tách dữ liệu 
+// INTERCEPTOR QUAN TRỌNG
 api.interceptors.response.use(
   (response) => {
-    // Nếu API trả về thành công nhưng errorCode != 0 (tùy quy ước BE của bạn)
-    // Giả sử errorCode = 0 là thành công
-    const resData = response.data; 
-    
-    // Trả về trực tiếp phần 'data' bên trong cho gọn code component
-    return resData; 
+    // Trả về trực tiếp response.data (chính là cái JSON { errorCode, message, data })
+    return response.data; 
   },
   (error) => {
+    // Nếu lỗi từ server (vd 400, 500), axios sẽ nhảy vào đây
+    // Ta vẫn nên reject để catch bên ngoài bắt được
     return Promise.reject(error);
   }
 );

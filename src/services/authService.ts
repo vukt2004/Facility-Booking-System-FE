@@ -1,16 +1,15 @@
 import api from '../lib/axios';
-import type { LoginRequest, ApiResponse } from '../types';
+import type { LoginRequest, LoginResponse, RegisterRequest, ApiResponse } from '../types';
 
 export const authService = {
-  //  POST /api/User/Login
+  // POST /api/User/Login
+  // Return type là LoginResponse (Object chứa token trực tiếp)
   login: async (credentials: LoginRequest) => {
-    // Lưu ý: data trả về có thể là Token string hoặc object chứa token
-    const response = await api.post<ApiResponse<any>>('/api/User/Login', credentials);
-    return response; 
+    return await api.post<any, LoginResponse>('/api/User/Login', credentials);
   },
-  
-  // [cite: 125] POST /api/User/Register
-  register: async (data: any) => {
-    return await api.post('/api/User/Register', data);
+
+  // Register thường vẫn trả về ApiResponse (hoặc check lại BE)
+  register: async (data: RegisterRequest) => {
+    return await api.post<any, ApiResponse<any>>('/api/User/Register', data);
   }
 };

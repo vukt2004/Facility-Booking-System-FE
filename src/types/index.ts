@@ -5,6 +5,12 @@ export interface ApiResponse<T> {
   data: T | null;
 }
 
+export interface LoginResponse {
+  token: string;
+  role: string; // Có thể là "Admin", "Student"... hoặc số "0", "1" tùy BE
+  message?: string; // Đề phòng trường hợp lỗi vẫn trả về object này
+}
+
 // --- ENUMS [cite: 146, 153, 154] ---
 export const UserRole = {
   Admin: 0,
@@ -86,4 +92,12 @@ export interface LoginRequest {
 
 export interface BookingCreateRequest {
   roomSlotId: string; // [cite: 134]
+}
+
+export interface RegisterRequest {
+  userName: string;
+  password: string;
+  email: string;
+  role: UserRole;
+  phoneNumber: string;
 }
