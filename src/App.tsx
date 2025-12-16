@@ -1,38 +1,24 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import WelcomePage from './pages/WelcomePage';
-import LoginPage from './pages/LoginPage';
-// import BookingPage from './pages/BookingPage';
-import AdminLayout from './components/layout/AdminLayout';
-import BookingManager from './pages/admin/BookingManager';
-import Dashboard from './pages/admin/Dashboard';
-// import RoomManager from './pages/admin/RoomManager';
-import RegisterPage from './pages/RegisterPage';
-import ProtectedRoute from './components/ProtectedRoute';
+import { RouterProvider } from "react-router-dom";
+import { ConfigProvider } from "antd";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { router } from "@/router";
+import "antd/dist/reset.css"; // Reset CSS mặc định
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<WelcomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        {/* Các route khác sẽ thêm sau */}
-        {/* <Route path="/booking" element={<BookingPage />} /> */}
-
-        <Route 
-          path="/admin/*" 
-          element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="dashboard" element={<Dashboard />} />
-          {/* <Route path="rooms" element={<RoomManager />} /> */}
-          <Route path="bookings" element={<BookingManager />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: "#1890ff", // Màu chủ đạo (Xanh dương FPT/Academic)
+          },
+        }}
+      >
+        <RouterProvider router={router} />
+      </ConfigProvider>
+    </QueryClientProvider>
   );
 }
 
