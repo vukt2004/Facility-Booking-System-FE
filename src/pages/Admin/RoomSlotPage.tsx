@@ -10,6 +10,7 @@ import {
   getSlotTypeLabel, 
   getSlotStatusLabel 
 } from '@/services/facility.service';
+import { handleAfterDelete } from '@/utils/pagination';
 
 const RoomSlotPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,21 +42,22 @@ const RoomSlotPage: React.FC = () => {
   // Hàm sinh danh sách các request từ form
   const generateBulkPayloads = (values: any) => {
     const payloads: any[] = [];
-    
-    // values.slotType và values.status giờ sẽ là NUMBER (0, 1...) do Form Select
     const { roomId, slotType, status } = values;
+
+    // Format chuẩn để gửi lên BE (Giữ nguyên giờ địa phương, không convert sang UTC)
+    const DATE_FORMAT = 'YYYY-MM-DDTHH:mm:ss';
 
     if (activeTab === 'single') {
       const [start, end] = values.singleTimeRange;
       payloads.push({
         roomId, 
-        slotType: Number(slotType), // Đảm bảo là số
-        status: Number(status),     // Đảm bảo là số
-        startTime: start.toISOString(),
-        endTime: end.toISOString(),
+        slotType: Number(slotType),
+        status: Number(status),
+        // Thay toISOString() bằng format()
+        startTime: dayjs(start).format(DATE_FORMAT),
+        endTime: dayjs(end).format(DATE_FORMAT),
       });
     } else {
-      // Logic loop giữ nguyên
       const [semStart, semEnd] = values.semesterRange;
       const [timeStart, timeEnd] = values.timeSlot;
       const selectedDays = values.daysOfWeek;
@@ -65,15 +67,24 @@ const RoomSlotPage: React.FC = () => {
 
       while (currentDate.isBefore(endDate) || currentDate.isSame(endDate)) {
         if (selectedDays.includes(currentDate.day())) {
-          const startDateTime = currentDate.hour(timeStart.hour()).minute(timeStart.minute()).second(0);
-          const endDateTime = currentDate.hour(timeEnd.hour()).minute(timeEnd.minute()).second(0);
+          // Set giờ phút giây cho ngày hiện tại
+          const startDateTime = currentDate
+            .hour(timeStart.hour())
+            .minute(timeStart.minute())
+            .second(0);
+            
+          const endDateTime = currentDate
+            .hour(timeEnd.hour())
+            .minute(timeEnd.minute())
+            .second(0);
 
           payloads.push({
             roomId, 
-            slotType: Number(slotType), // Gửi số
-            status: Number(status),     // Gửi số
-            startTime: startDateTime.toISOString(),
-            endTime: endDateTime.toISOString(),
+            slotType: Number(slotType),
+            status: Number(status),
+            // Thay toISOString() bằng format()
+            startTime: startDateTime.format(DATE_FORMAT),
+            endTime: endDateTime.format(DATE_FORMAT),
           });
         }
         currentDate = currentDate.add(1, 'day');
@@ -116,7 +127,14 @@ const RoomSlotPage: React.FC = () => {
     mutationFn: (id: string) => facilityService.deleteRoomSlot(id),
     onSuccess: () => {
       message.success('Đã xóa slot');
-      queryClient.invalidateQueries({ queryKey: ['roomSlots'] });
+      handleAfterDelete(
+        queryClient,
+        ['roomSlots'],
+        pagination,
+        setPagination,
+        dataSource.length
+      );
+      
     },
   });
 
@@ -150,24 +168,19 @@ const RoomSlotPage: React.FC = () => {
     },
     {
       title: 'Loại Block', dataIndex: 'slotType', key: 'slotType',
-      render: (type: string) => {
-          // Map string sang màu
-          if (type === SLOT_TYPES.BLOCK3) return <Tag color="blue">Block 3</Tag>;
-          if (type === SLOT_TYPES.BLOCK10) return <Tag color="purple">Block 10</Tag>;
-          return <Tag>{type}</Tag>; // Fallback cho giá trị lạ
-      }
+      render: (type: any) => <Tag color="blue">{getSlotTypeLabel(type)}</Tag>
     },
     {
       title: 'Trạng thái', dataIndex: 'status', key: 'status',
-      render: (status: string) => {
-          if (status === SLOT_STATUS.AVAILABLE) return <Tag color="success">Available</Tag>;
-          if (status === SLOT_STATUS.BOOKED) return <Tag color="volcano">Booked</Tag>;
-          return <Tag color="default">{status}</Tag>;
+      render: (status: any) => {
+         const label = getSlotStatusLabel(status);
+         const color = label.includes('Available') ? 'success' : (label.includes('Booked') ? 'volcano' : 'default');
+         return <Tag color={color}>{label}</Tag>;
       }
     },
     {
       title: 'Hành động', key: 'action',
-      render: (_: any, record: RoomSlot) => (
+      render: (_: any, record: any) => (
         <Popconfirm title="Xóa?" onConfirm={() => deleteMutation.mutate(record.id)}>
           <Button type="text" icon={<DeleteOutlined style={{ color: 'red' }} />} />
         </Popconfirm>
@@ -220,8 +233,8 @@ const RoomSlotPage: React.FC = () => {
             layout="vertical" 
             onFinish={(vals) => createMutation.mutate(vals)}
             initialValues={{ 
-                slotType: SLOT_TYPES.BLOCK3,      // <-- String mặc định
-                status: SLOT_STATUS.AVAILABLE     // <-- String mặc định
+                slotType: RoomSlotTypeEnum.Block3,   // Default là số 0
+                status: RoomSlotStatusEnum.Available // Default là số 0
             }}
         >
           <Form.Item 
@@ -279,7 +292,17 @@ const RoomSlotPage: React.FC = () => {
                                 label="Lặp lại vào các thứ"
                                 rules={[{ required: activeTab === 'semester', message: 'Chọn ít nhất 1 thứ' }]}
                             >
-                                <Checkbox.Group options={dayOptions} />
+                                <Checkbox.Group options={
+                                    [
+                                        { label: 'Thứ 2', value: 1 },
+                                        { label: 'Thứ 3', value: 2 },
+                                        { label: 'Thứ 4', value: 3 },
+                                        { label: 'Thứ 5', value: 4 },
+                                        { label: 'Thứ 6', value: 5 },
+                                        { label: 'Thứ 7', value: 6 },
+                                        { label: 'Chủ Nhật', value: 0 },
+                                    ]
+                                } />
                             </Form.Item>
                         </>
                     )
@@ -287,19 +310,22 @@ const RoomSlotPage: React.FC = () => {
             ]}
           />
 
+          {/* SỬA SELECT OPTION VALUE THÀNH SỐ (ENUM) */}
           <div style={{ display: 'flex', gap: 16 }}>
              <Form.Item name="slotType" label="Loại Block" style={{ flex: 1 }}>
                 <Select>
-                    <Select.Option value={SLOT_TYPES.BLOCK3}>Block 3</Select.Option>
-                    <Select.Option value={SLOT_TYPES.BLOCK10}>Block 10</Select.Option>
+                    {/* Value là Số (Integer) */}
+                    <Select.Option value={RoomSlotTypeEnum.Block3}>Block 3</Select.Option>
+                    <Select.Option value={RoomSlotTypeEnum.Block10}>Block 10</Select.Option>
                 </Select>
              </Form.Item>
              
              <Form.Item name="status" label="Trạng thái" style={{ flex: 1 }}>
                 <Select>
-                    <Select.Option value={SLOT_STATUS.AVAILABLE}>Available (Trống)</Select.Option>
-                    <Select.Option value={SLOT_STATUS.MAINTENANCE}>Maintenance (Bảo trì)</Select.Option>
-                    <Select.Option value={SLOT_STATUS.BOOKED}>Booked (Đã đặt)</Select.Option>
+                    {/* Value là Số (Integer) */}
+                    <Select.Option value={RoomSlotStatusEnum.Available}>Available (Trống)</Select.Option>
+                    <Select.Option value={RoomSlotStatusEnum.Maintenance}>Maintenance (Bảo trì)</Select.Option>
+                    <Select.Option value={RoomSlotStatusEnum.Booked}>Booked (Đã đặt)</Select.Option>
                 </Select>
              </Form.Item>
           </div>
@@ -307,7 +333,7 @@ const RoomSlotPage: React.FC = () => {
           <div style={{ textAlign: 'right' }}>
             <Button onClick={handleCloseModal} style={{ marginRight: 8 }}>Hủy</Button>
             <Button type="primary" htmlType="submit" loading={createMutation.isPending}>
-              {activeTab === 'single' ? 'Tạo 1 Slot' : 'Tạo Hàng Loạt'}
+              {activeTab === 'single' ? 'Tạo' : 'Tạo Hàng Loạt'}
             </Button>
           </div>
         </Form>

@@ -4,6 +4,7 @@ import { Table, Button, Modal, Form, Input, Space, message, Popconfirm } from 'a
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilityService, type RoomType, type RoomTypeCreateRequest } from '@/services/facility.service';
+import { handleAfterDelete } from '@/utils/pagination';
 
 const RoomTypePage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,7 +50,13 @@ const RoomTypePage: React.FC = () => {
     mutationFn: (id: string) => facilityService.deleteRoomType(id),
     onSuccess: () => {
       message.success('Đã xóa');
-      queryClient.invalidateQueries({ queryKey: ['roomTypes'] });
+      handleAfterDelete(
+        queryClient,
+        ['roomTypes'], // Key chính (Prefix) để invalidate
+        pagination,
+        setPagination,
+        dataSource.length
+      );
     },
   });
 

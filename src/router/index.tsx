@@ -1,62 +1,79 @@
 // src/router/index.tsx
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Login from "@/pages/Auth/Login";
+import Register from "@/pages/Auth/Register";
 import AdminLayout from "@/components/layout/AdminLayout";
 import CampusPage from "@/pages/Admin/CampusPage";
-import Register from "@/pages/Auth/Register";
 import AreaPage from "@/pages/Admin/AreaPage";
 import RoomTypePage from "@/pages/Admin/RoomTypePage";
 import RoomPage from "@/pages/Admin/RoomPage";
 import RoomSlotPage from "@/pages/Admin/RoomSlotPage";
-// Import các trang khác sau khi tạo...
+
+// User Pages
+import BookingPage from "@/pages/User/BookingPage";
+import MyBookingPage from "@/pages/User/MyBookingPage";
+import LandingPage from "@/pages/General/LandingPage";
+import ProtectedRoute from "./ProtectedRoute"; // Import Component bảo vệ
+import MainLayout from "@/components/layout/MainLayout"; // Layout có Header cho User
+import BookingApprovalPage from "@/pages/Admin/BookingApprovalPage";
 
 export const router = createBrowserRouter([
+  // --- PUBLIC ROUTES (Ai cũng vào được) ---
+  {
+    path: "/",
+    element: <LandingPage />, // Trang chủ là Landing Page
+  },
   {
     path: "/login",
     element: <Login />,
   },
   {
-    path: "/register", // Thêm route này
+    path: "/register",
     element: <Register />,
   },
+
+  // --- ADMIN ROUTES (Chỉ Admin mới vào được - Role 0) ---
   {
-    path: "/admin",
-    element: <AdminLayout />, // Layout bọc ngoài
+    element: <ProtectedRoute allowedRoles={[0]} />, // Bọc bảo vệ Role = 0
     children: [
-        {
-            // Redirect mặc định vào dashboard hoặc campus
-            index: true, 
-            element: <Navigate to="/admin/dashboard" replace /> 
-        },
-        { 
-            path: "dashboard", 
-            element: <div>Dashboard Content (Coming soon)</div> 
-        },
-        { 
-            path: "campus", 
-            element: <CampusPage /> 
-        },
-        { 
-            path: "room-type", 
-            element: <RoomTypePage /> 
-        },
-        { 
-            path: "area", 
-            element: <AreaPage /> 
-        },
-        { 
-            path: "room", 
-            element: <RoomPage /> 
-        },
-        { 
-            path: "slots", 
-            element: <RoomSlotPage /> 
-        },
+      {
+        path: "/admin",
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+          { path: "dashboard", element: <div>Dashboard Thống Kê (Coming soon)</div> },
+          { path: "campus", element: <CampusPage /> },
+          { path: "area", element: <AreaPage /> },
+          { path: "room-type", element: <RoomTypePage /> },
+          { path: "room", element: <RoomPage /> },
+          { path: "slots", element: <RoomSlotPage /> },
+          { 
+            path: "bookings", 
+            element: <BookingApprovalPage /> // Thay thế cho cái div "Coming soon" trước đây 
+          },
+        ]
+      }
     ]
   },
-  // Nếu vào đường dẫn lạ thì redirect về login
+
+  // --- USER ROUTES (Sinh viên & Giảng viên - Role 2, 1) ---
+  {
+    element: <ProtectedRoute allowedRoles={[2, 1]} />, // Bọc bảo vệ Role 2 và 1
+    children: [
+      {
+        path: "/", 
+        element: <MainLayout />, // Layout chung cho User (có menu Booking, History)
+        children: [
+          { path: "booking", element: <BookingPage /> },
+          { path: "my-bookings", element: <MyBookingPage /> },
+        ]
+      }
+    ]
+  },
+
+  // --- FALLBACK ---
   {
     path: "*",
-    element: <Navigate to="/login" replace />,
+    element: <Navigate to="/" replace />, // Vào link linh tinh thì về Landing Page
   }
 ]);

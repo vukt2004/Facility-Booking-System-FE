@@ -4,6 +4,7 @@ import { Table, Button, Modal, Form, Input, Space, message, Popconfirm } from 'a
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilityService, type Campus, type CampusCreateRequest } from '@/services/facility.service';
+import { handleAfterDelete } from '@/utils/pagination';
 
 const CampusPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,7 +61,13 @@ const CampusPage: React.FC = () => {
     mutationFn: (id: string) => facilityService.deleteCampus(id),
     onSuccess: () => {
       message.success('Đã xóa Campus');
-      queryClient.invalidateQueries({ queryKey: ['campuses'] });
+      handleAfterDelete(
+        queryClient,
+        ['campuses'],
+        pagination,
+        setPagination,
+        dataSource.length
+      );
     },
   });
 

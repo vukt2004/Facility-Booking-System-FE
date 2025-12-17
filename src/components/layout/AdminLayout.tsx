@@ -33,12 +33,6 @@ const AdminLayout: React.FC = () => {
   // Menu items
   const menuItems = [
     {
-      key: '/admin/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard',
-      onClick: () => navigate('/admin/dashboard'),
-    },
-    {
       key: '/admin/campus',
       icon: <BankOutlined />,
       label: 'Quản lý Campus',

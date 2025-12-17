@@ -5,6 +5,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilityService, type Area, type AreaCreateRequest } from '@/services/facility.service';
 import { useAuthStore } from '@/store/useAuthStore';
+import { handleAfterDelete } from '@/utils/pagination';
 
 const AreaPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,7 +59,13 @@ const AreaPage: React.FC = () => {
     mutationFn: (id: string) => facilityService.deleteArea(id),
     onSuccess: () => {
       message.success('Đã xóa Area');
-      queryClient.invalidateQueries({ queryKey: ['areas'] });
+      handleAfterDelete(
+        queryClient,
+        ['areas'], // Key chính (Prefix) để invalidate
+        pagination,
+        setPagination,
+        dataSource.length
+      );
     },
   });
 

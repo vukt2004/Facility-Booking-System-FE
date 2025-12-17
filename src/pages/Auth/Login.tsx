@@ -1,7 +1,7 @@
 // src/pages/Auth/Login.tsx
 import React from 'react';
 import { Form, Input, Button, Card, Typography, message } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, HomeOutlined } from '@ant-design/icons';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/auth.service';
@@ -54,8 +54,13 @@ const Login: React.FC = () => {
       }
     },
     onError: (error: any) => {
+      const errorMsg = error.response?.data?.message;
       console.error(error);
-      message.error('Đăng nhập thất bại: ' + (error.message || 'Lỗi server'));
+      if (errorMsg) {
+        message.error(errorMsg);
+      } else {
+        message.error('Đăng nhập thất bại. Vui lòng thử lại!');
+      }
     },
   });
 
@@ -69,8 +74,29 @@ const Login: React.FC = () => {
       justifyContent: 'center', 
       alignItems: 'center', 
       minHeight: '100vh',
-      backgroundColor: '#f0f2f5' 
+      backgroundColor: '#f0f2f5',
+      position: 'relative' 
     }}>
+
+      {/* --- NÚT QUAY LẠI TRANG CHỦ --- */}
+      <Button 
+        type="text" 
+        icon={<HomeOutlined />} 
+        onClick={() => navigate('/')}
+        style={{ 
+            position: 'absolute', 
+            top: 20, 
+            left: 20, 
+            fontSize: '16px',
+            color: '#666',
+            display: 'flex',
+            alignItems: 'center'
+        }}
+      >
+        Trang chủ
+      </Button>
+      {/* ----------------------------- */}
+      
       <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
             {/* Logo hoặc Tên hệ thống */}

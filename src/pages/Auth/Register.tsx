@@ -1,6 +1,6 @@
 import React from 'react';
 import { Form, Input, Button, Card, Typography, message, Select, Row, Col } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, HomeOutlined } from '@ant-design/icons';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '@/services/auth.service';
@@ -40,8 +40,21 @@ const Register: React.FC = () => {
       alignItems: 'center', 
       minHeight: '100vh',
       backgroundColor: '#f0f2f5',
-      padding: '20px'
+      padding: '20px 0',
+      position: 'relative'
     }}>
+
+      {/* --- NÚT QUAY LẠI ĐĂNG NHẬP / TRANG CHỦ --- */}
+      <div style={{ position: 'absolute', top: 20, left: 20, display: 'flex', gap: 10 }}>
+          <Button 
+            icon={<HomeOutlined />} 
+            onClick={() => navigate('/')}
+          >
+            Trang chủ
+          </Button>
+      </div>
+      {/* ------------------------------------------- */}
+      
       <Card style={{ width: 500, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Title level={3} style={{ color: '#1890ff' }}>Đăng Ký Tài Khoản</Title>

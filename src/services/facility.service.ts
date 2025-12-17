@@ -27,7 +27,7 @@ export const getSlotTypeLabel = (type: string | number) => {
 
 export const getSlotStatusLabel = (status: string | number) => {
   if (status === 'Available' || status === 0) return 'Available (Trống)';
-  if (status === 'Booked' || status === 1) return 'Booked (Đã đặt)';
+  if (status === 'Unavailable' || status === 1) return 'Unavailable (Đã đặt)';
   if (status === 'Maintenance' || status === 2) return 'Maintenance (Bảo trì)';
   return 'Unknown';
 };
@@ -119,7 +119,7 @@ export interface RoomSlotCreateRequest {
   roomId: string;
   startTime: string;
   endTime: string;
-  slotType: number;
+  slotType: number; 
   status: number;   
 }
 
@@ -203,8 +203,8 @@ export const facilityService = {
 
   // === ROOM SLOT ===
   // [cite: 92-95]
-  getRoomSlots: async (params?: any) => {
-    return axiosClient.get<any, ApiResponse<PaginatedResult<any>>>('/RoomSlot', { params });
+  getRoomSlots: async (params?: { page?: number; size?: number; keyword?: string }) => {
+    return axiosClient.get<any, ApiResponse<PaginatedResult<RoomSlot>>>('/RoomSlot', { params });
   },
 
   // [cite: 99-101]
