@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { Table, Button, Modal, Form, Select, DatePicker, Tag, Space, message, Popconfirm } from 'antd';
-import { PlusOutlined, DeleteOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Select, DatePicker, Tag, Space, message, Popconfirm, Tabs, Checkbox, TimePicker } from 'antd';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import dayjs from 'dayjs';
-import { facilityService, type RoomSlot, RoomSlotStatus, RoomSlotType } from '@/services/facility.service';
+import dayjs, { Dayjs } from 'dayjs';
+import { facilityService, type RoomSlot, SLOT_STATUS, SLOT_TYPES} from '@/services/facility.service';
 
 const RoomSlotPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+  const [activeTab, setActiveTab] = useState('single'); // 'single' | 'semester'
   const queryClient = useQueryClient();
 
-  // 1. Fetch Dữ liệu Slots
+  // --- 1. FETCH DATA ---
   const { data: slotData, isLoading } = useQuery({
     queryKey: ['roomSlots', pagination.current, pagination.pageSize],
     queryFn: () => facilityService.getRoomSlots({
@@ -23,36 +24,95 @@ const RoomSlotPage: React.FC = () => {
   const dataSource = slotData?.data?.items || [];
   const totalItems = slotData?.data?.totalItems || 0;
 
-  // 2. Fetch Rooms (để chọn trong Modal và hiển thị tên)
   const { data: roomData } = useQuery({
     queryKey: ['rooms_all'],
     queryFn: () => facilityService.getRooms({ size: 100 }),
   });
   const rooms = roomData?.data?.items || [];
 
-  // 3. Mutation Tạo Slot
+  // --- 2. LOGIC TẠO LỊCH (QUAN TRỌNG) ---
+  
+  // Hàm sinh danh sách các request từ form
+  const generateBulkPayloads = (values: any) => {
+    const payloads: any[] = [];
+    const { roomId, slotType, status } = values;
+
+    if (activeTab === 'single') {
+      // Logic cũ: Tạo 1 slot
+      const [start, end] = values.singleTimeRange;
+      payloads.push({
+        roomId, slotType, status,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+      });
+    } else {
+      // Logic mới: Tạo theo học kỳ
+      const [semStart, semEnd] = values.semesterRange; // DatePicker (Ngày)
+      const [timeStart, timeEnd] = values.timeSlot;    // TimePicker (Giờ)
+      const selectedDays = values.daysOfWeek;          // Mảng [1, 3, 5] (Thứ 2, 4, 6)
+
+      let currentDate = dayjs(semStart).startOf('day');
+      const endDate = dayjs(semEnd).endOf('day');
+
+      // Vòng lặp từ ngày bắt đầu đến kết thúc
+      while (currentDate.isBefore(endDate) || currentDate.isSame(endDate)) {
+        // dayjs().day() trả về: 0 (CN), 1 (T2), ..., 6 (T7)
+        if (selectedDays.includes(currentDate.day())) {
+          
+          // Ghép Ngày của currentDate + Giờ của timeSlot
+          const startDateTime = currentDate
+            .hour(timeStart.hour())
+            .minute(timeStart.minute())
+            .second(0);
+            
+          const endDateTime = currentDate
+            .hour(timeEnd.hour())
+            .minute(timeEnd.minute())
+            .second(0);
+
+          payloads.push({
+            roomId, slotType, status,
+            startTime: startDateTime.toISOString(),
+            endTime: endDateTime.toISOString(),
+          });
+        }
+        // Tăng thêm 1 ngày
+        currentDate = currentDate.add(1, 'day');
+      }
+    }
+    return payloads;
+  };
+
+  // --- 3. MUTATIONS ---
   const createMutation = useMutation({
-    mutationFn: (values: any) => {
-      // Chuẩn hóa dữ liệu trước khi gửi API
-      const payload = {
-        roomId: values.roomId,
-        slotType: values.slotType,
-        status: values.status,
-        // Chuyển Dayjs object sang ISO string
-        startTime: values.timeRange[0].toISOString(),
-        endTime: values.timeRange[1].toISOString(),
-      };
-      return facilityService.createRoomSlot(payload);
+    mutationFn: async (values: any) => {
+      const payloads = generateBulkPayloads(values);
+      
+      if (payloads.length === 0) {
+        throw new Error("Không có ngày nào phù hợp trong khoảng thời gian chọn!");
+      }
+
+      if (payloads.length > 100) {
+         // Cảnh báo nếu tạo quá nhiều
+         // throw new Error("Số lượng slot quá lớn (>100). Vui lòng chia nhỏ khoảng thời gian.");
+      }
+
+      // Gửi song song tất cả request (Promise.all)
+      // Lưu ý: Nếu 1 cái fail, cả cụm sẽ fail (tùy logic xử lý lỗi).
+      // Ở đây ta dùng map để gọi API
+      return Promise.all(payloads.map(p => facilityService.createRoomSlot(p)));
     },
-    onSuccess: () => {
-      message.success('Tạo slot thành công');
+    onSuccess: (results) => {
+      message.success(`Đã tạo thành công ${results.length} slots!`);
       handleCloseModal();
       queryClient.invalidateQueries({ queryKey: ['roomSlots'] });
     },
-    onError: () => message.error('Có lỗi xảy ra khi tạo slot'),
+    onError: (error: any) => {
+      console.error(error);
+      message.error(error.message || 'Có lỗi xảy ra khi tạo slot');
+    },
   });
 
-  // Mutation Xóa
   const deleteMutation = useMutation({
     mutationFn: (id: string) => facilityService.deleteRoomSlot(id),
     onSuccess: () => {
@@ -61,74 +121,70 @@ const RoomSlotPage: React.FC = () => {
     },
   });
 
-  // 4. Handlers
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    form.resetFields();
-  };
-
-  // Helper tìm tên phòng từ ID
+  // --- 4. HELPER & HANDLERS ---
   const getRoomName = (id: string) => {
     const room = rooms.find((r: any) => r.id === id);
     return room ? `${room.roomName} (${room.roomNumber})` : id;
   };
 
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    form.resetFields();
+    setActiveTab('single');
+  };
+
   const columns = [
     { 
-      title: 'Phòng', 
-      dataIndex: 'roomId', 
-      key: 'roomId',
-      render: (id: string) => <b style={{ color: '#1890ff' }}>{getRoomName(id)}</b>
+        title: 'Phòng', dataIndex: 'roomId', key: 'roomId',
+        render: (id: string) => {
+            const room = rooms.find((r: any) => r.id === id);
+            return <b style={{ color: '#1890ff' }}>{room ? room.roomName : id}</b>;
+        }
     },
     {
-      title: 'Thời gian bắt đầu',
-      dataIndex: 'startTime',
-      key: 'startTime',
-      render: (text: string) => (
-        <span>
-            {dayjs(text).format('DD/MM/YYYY')} <Tag color="green">{dayjs(text).format('HH:mm')}</Tag>
-        </span>
-      )
+      title: 'Bắt đầu', dataIndex: 'startTime', key: 'startTime',
+      render: (text: string) => <span>{dayjs(text).format('DD/MM/YYYY HH:mm')}</span>
     },
     {
-      title: 'Thời gian kết thúc',
-      dataIndex: 'endTime',
-      key: 'endTime',
-      render: (text: string) => (
-        <span>
-             {dayjs(text).format('DD/MM/YYYY')} <Tag color="red">{dayjs(text).format('HH:mm')}</Tag>
-        </span>
-      )
+        title: 'Kết thúc', dataIndex: 'endTime', key: 'endTime',
+        render: (text: string) => <span>{dayjs(text).format('DD/MM/YYYY HH:mm')}</span>
     },
     {
-      title: 'Loại',
-      dataIndex: 'slotType',
-      key: 'slotType',
-      render: (type: number) => (
-        type === RoomSlotType.Block10 ? <Tag color="blue">Block 10 tuần</Tag> : <Tag color="orange">Block 3 tuần</Tag>
-      )
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: number) => {
-        if(status === RoomSlotStatus.Available) return <Tag color="success">Trống</Tag>;
-        if(status === RoomSlotStatus.Booked) return <Tag color="volcano">Đã đặt</Tag>;
-        return <Tag color="default">Bảo trì</Tag>;
+      title: 'Loại Block', dataIndex: 'slotType', key: 'slotType',
+      render: (type: string) => {
+          // Map string sang màu
+          if (type === SLOT_TYPES.BLOCK3) return <Tag color="blue">Block 3</Tag>;
+          if (type === SLOT_TYPES.BLOCK10) return <Tag color="purple">Block 10</Tag>;
+          return <Tag>{type}</Tag>; // Fallback cho giá trị lạ
       }
     },
     {
-      title: 'Hành động',
-      key: 'action',
+      title: 'Trạng thái', dataIndex: 'status', key: 'status',
+      render: (status: string) => {
+          if (status === SLOT_STATUS.AVAILABLE) return <Tag color="success">Available</Tag>;
+          if (status === SLOT_STATUS.BOOKED) return <Tag color="volcano">Booked</Tag>;
+          return <Tag color="default">{status}</Tag>;
+      }
+    },
+    {
+      title: 'Hành động', key: 'action',
       render: (_: any, record: RoomSlot) => (
-        <Space size="middle">
-          <Popconfirm title="Xóa slot này?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="text" icon={<DeleteOutlined style={{ color: 'red' }} />} />
-          </Popconfirm>
-        </Space>
+        <Popconfirm title="Xóa?" onConfirm={() => deleteMutation.mutate(record.id)}>
+          <Button type="text" icon={<DeleteOutlined style={{ color: 'red' }} />} />
+        </Popconfirm>
       ),
     },
+  ];
+
+  // Options cho checkbox thứ
+  const dayOptions = [
+    { label: 'Thứ 2', value: 1 },
+    { label: 'Thứ 3', value: 2 },
+    { label: 'Thứ 4', value: 3 },
+    { label: 'Thứ 5', value: 4 },
+    { label: 'Thứ 6', value: 5 },
+    { label: 'Thứ 7', value: 6 },
+    { label: 'Chủ Nhật', value: 0 },
   ];
 
   return (
@@ -136,7 +192,7 @@ const RoomSlotPage: React.FC = () => {
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
         <h2>Quản lý Lịch Phòng (Slots)</h2>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
-          Tạo Slot Mới
+          Tạo Lịch Mới
         </Button>
       </div>
 
@@ -146,21 +202,29 @@ const RoomSlotPage: React.FC = () => {
         rowKey="id" 
         loading={isLoading}
         pagination={{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: totalItems,
-          onChange: (p, s) => setPagination({ current: p, pageSize: s }),
-          showSizeChanger: true
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: totalItems,
+            onChange: (p, s) => setPagination({ current: p, pageSize: s }),
         }}
       />
 
       <Modal
-        title="Tạo Khung Giờ (Slot) Mới"
+        title="Tạo Khung Giờ Hoạt Động"
         open={isModalOpen}
         onCancel={handleCloseModal}
         footer={null}
+        width={600}
       >
-        <Form form={form} layout="vertical" onFinish={(vals) => createMutation.mutate(vals)}>
+        <Form 
+            form={form} 
+            layout="vertical" 
+            onFinish={(vals) => createMutation.mutate(vals)}
+            initialValues={{ 
+                slotType: SLOT_TYPES.BLOCK3,      // <-- String mặc định
+                status: SLOT_STATUS.AVAILABLE     // <-- String mặc định
+            }}
+        >
           <Form.Item 
             name="roomId" 
             label="Chọn Phòng" 
@@ -168,48 +232,75 @@ const RoomSlotPage: React.FC = () => {
           >
             <Select placeholder="Chọn phòng..." showSearch optionFilterProp="children">
               {rooms.map((r: any) => (
-                <Select.Option key={r.id} value={r.id}>
-                    {r.roomName} - {r.roomNumber}
-                </Select.Option>
+                <Select.Option key={r.id} value={r.id}>{r.roomName} - {r.roomNumber}</Select.Option>
               ))}
             </Select>
           </Form.Item>
 
-          <Form.Item 
-            name="timeRange" 
-            label="Thời gian (Bắt đầu - Kết thúc)" 
-            rules={[{ required: true, message: 'Vui lòng chọn thời gian' }]}
-          >
-            <DatePicker.RangePicker 
-                showTime={{ format: 'HH:mm' }} 
-                format="DD/MM/YYYY HH:mm" 
-                style={{ width: '100%' }}
-                placeholder={['Bắt đầu', 'Kết thúc']}
-            />
-          </Form.Item>
+          <Tabs 
+            activeKey={activeTab} 
+            onChange={setActiveTab}
+            items={[
+                {
+                    key: 'single',
+                    label: 'Tạo Lẻ (1 Slot)',
+                    children: (
+                        <Form.Item 
+                            name="singleTimeRange" 
+                            label="Thời gian cụ thể"
+                            rules={[{ required: activeTab === 'single', message: 'Chọn thời gian' }]}
+                        >
+                            <DatePicker.RangePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
+                        </Form.Item>
+                    )
+                },
+                {
+                    key: 'semester',
+                    label: 'Tạo Theo Kỳ (Hàng loạt)',
+                    children: (
+                        <>
+                            <Form.Item 
+                                name="semesterRange" 
+                                label="Khoảng thời gian (Ngày bắt đầu - Kết thúc)"
+                                rules={[{ required: activeTab === 'semester', message: 'Chọn ngày bắt đầu/kết thúc' }]}
+                            >
+                                <DatePicker.RangePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
+                            </Form.Item>
+
+                            <Form.Item 
+                                name="timeSlot" 
+                                label="Khung giờ (Ví dụ: 07:00 - 09:00)"
+                                rules={[{ required: activeTab === 'semester', message: 'Chọn khung giờ' }]}
+                            >
+                                <TimePicker.RangePicker format="HH:mm" style={{ width: '100%' }} />
+                            </Form.Item>
+
+                            <Form.Item 
+                                name="daysOfWeek" 
+                                label="Lặp lại vào các thứ"
+                                rules={[{ required: activeTab === 'semester', message: 'Chọn ít nhất 1 thứ' }]}
+                            >
+                                <Checkbox.Group options={dayOptions} />
+                            </Form.Item>
+                        </>
+                    )
+                }
+            ]}
+          />
 
           <div style={{ display: 'flex', gap: 16 }}>
-             <Form.Item 
-                name="slotType" 
-                label="Loại Slot" 
-                initialValue={RoomSlotType.Block10}
-                style={{ flex: 1 }}
-             >
+             <Form.Item name="slotType" label="Loại Block" style={{ flex: 1 }}>
                 <Select>
-                    <Select.Option value={RoomSlotType.Block10}>Block 10 tuần</Select.Option>
-                    <Select.Option value={RoomSlotType.Block3}>Block 3 tuần</Select.Option>
+                    <Select.Option value={SLOT_TYPES.BLOCK3}>Block 3</Select.Option>
+                    <Select.Option value={SLOT_TYPES.BLOCK10}>Block 10</Select.Option>
                 </Select>
              </Form.Item>
-
-             <Form.Item 
-                name="status" 
-                label="Trạng thái ban đầu" 
-                initialValue={RoomSlotStatus.Available}
-                style={{ flex: 1 }}
-             >
+             
+             <Form.Item name="status" label="Trạng thái" style={{ flex: 1 }}>
                 <Select>
-                    <Select.Option value={RoomSlotStatus.Available}>Trống (Available)</Select.Option>
-                    <Select.Option value={RoomSlotStatus.Maintenance}>Bảo trì</Select.Option>
+                    <Select.Option value={SLOT_STATUS.AVAILABLE}>Available (Trống)</Select.Option>
+                    <Select.Option value={SLOT_STATUS.MAINTENANCE}>Maintenance (Bảo trì)</Select.Option>
+                    <Select.Option value={SLOT_STATUS.BOOKED}>Booked (Đã đặt)</Select.Option>
                 </Select>
              </Form.Item>
           </div>
@@ -217,7 +308,7 @@ const RoomSlotPage: React.FC = () => {
           <div style={{ textAlign: 'right' }}>
             <Button onClick={handleCloseModal} style={{ marginRight: 8 }}>Hủy</Button>
             <Button type="primary" htmlType="submit" loading={createMutation.isPending}>
-              Tạo Slot
+              {activeTab === 'single' ? 'Tạo 1 Slot' : 'Tạo Hàng Loạt'}
             </Button>
           </div>
         </Form>

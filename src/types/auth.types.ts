@@ -32,9 +32,9 @@ export interface RegisterRequest {
 
 // Role Enum để dùng cho dễ nhớ
 export const UserRole = {
-  Student: 0,
+  Student: 2,
   Lecturer: 1,
-  Admin: 2
+  Admin: 0
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];

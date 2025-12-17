@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { LoginRequest } from '@/types/auth.types';
+import { decodeUserFromToken } from '@/utils/jwt';
 
 const { Title, Text } = Typography;
 
@@ -16,41 +17,40 @@ const Login: React.FC = () => {
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginRequest) => authService.login(data),
-    onSuccess: (response: any) => { // Dùng any tạm thời hoặc LoginResponse mới
-      console.log("🔥 API RESPONSE:", response);
+    onSuccess: (response: any) => {
+      // 1. Lấy token
+      const token = response?.token || response?.data?.token;
 
-      // 1. Kiểm tra Token trực tiếp
-      if (response && response.token) {
+      if (token) {
         message.success('Đăng nhập thành công!');
 
-        // 2. Map Role từ String sang Number (để lưu vào Store cho thống nhất với Swagger)
-        // Swagger định nghĩa: 0=Student, 1=Lecturer, 2=Admin 
-        let roleEnum = 0; 
-        if (response.role === "Admin") roleEnum = 2;
-        else if (response.role === "Lecturer") roleEnum = 1;
-        else roleEnum = 0; // Mặc định là Student
+        // 2. DECODE TOKEN ĐỂ LẤY INFO (Thay vì tự chế object rỗng)
+        const userInfo = decodeUserFromToken(token);
 
-        // 3. Lưu vào Store
-        // Vì response thực tế thiếu thông tin user (id, name), ta tự decode token hoặc lưu tạm
-        setAuth({
-          token: response.token,
-          user: {
-            id: "", // Response này thiếu ID, có thể cần lấy từ Token (Decode JWT) sau này
-            username: "", // Thiếu username
-            fullName: response.role, // Tạm dùng Role làm tên
-            email: "",
-            role: roleEnum 
-          },
-        });
+        if (userInfo) {
+            console.log("User Info decoded:", userInfo);
+            
+            // 3. Lưu vào Store (Update store user với info xịn)
+            setAuth({
+                token: token,
+                user: {
+                    id: userInfo.id,       // <-- Đã có ID thật
+                    username: userInfo.email.split('@')[0], 
+                    fullName: userInfo.role, // Hoặc lấy từ email
+                    email: userInfo.email,
+                    role: userInfo.roleId 
+                }
+            });
 
-        // 4. Điều hướng
-        if (response.role === "Admin") {
-          navigate('/admin/dashboard');
+            // 4. Điều hướng
+            if (userInfo.roleId === 0) { // Admin
+                navigate('/admin/dashboard');
+            } else {
+                navigate('/');
+            }
         } else {
-          navigate('/');
+            message.error('Token không hợp lệ');
         }
-      } else {
-        message.error('Không tìm thấy Token trong phản hồi');
       }
     },
     onError: (error: any) => {

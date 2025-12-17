@@ -3,16 +3,16 @@ import type { ApiResponse, PaginatedResult } from '@/types/backend';
 import dayjs from 'dayjs';
 
 // --- Enums ---
-export const RoomSlotStatus = {
-  Available: 0,
-  Booked: 1,
-  Maintenance: 2
-} as const;
+export const SLOT_TYPES = {
+  BLOCK3: 'Block3',
+  BLOCK10: 'Block10'
+};
 
-export const RoomSlotType = {
-  Block10: 0,
-  Block3: 1     
-} as const;
+export const SLOT_STATUS = {
+  AVAILABLE: 'Available',
+  BOOKED: 'Booked',
+  MAINTENANCE: 'Maintenance' // Giả định status này, nếu BE trả khác thì sửa sau
+};
 
 // --- Interface cho Campus ---
 export interface Campus {
@@ -91,20 +91,19 @@ export interface RoomCreateRequest {
 export interface RoomSlot {
   id: string;
   roomId: string;
-  startTime: string; // ISO String
-  endTime: string;   // ISO String
-  slotType: typeof RoomSlotType[keyof typeof RoomSlotType];
-  status: typeof RoomSlotStatus[keyof typeof RoomSlotStatus];
-  // Các field hiển thị (nếu BE có trả về kèm tên phòng)
+  startTime: string; 
+  endTime: string;
+  slotType: string; // <-- Sửa thành string
+  status: string;   // <-- Sửa thành string
   roomName?: string; 
 }
 
 export interface RoomSlotCreateRequest {
   roomId: string;
-  startTime: string; // Cần format ISO 8601
+  startTime: string;
   endTime: string;
-  slotType: number;
-  status: number;
+  slotType: string; // <-- Sửa thành string để gửi lên "Block3"
+  status: string;   // <-- Sửa thành string để gửi lên "Available"
 }
 
 // --- Service ---

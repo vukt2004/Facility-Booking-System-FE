@@ -4,6 +4,7 @@ import { Table, Button, Modal, Form, Input, Space, message, Popconfirm, Select }
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilityService, type Area, type AreaCreateRequest } from '@/services/facility.service';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const AreaPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -11,6 +12,7 @@ const AreaPage: React.FC = () => {
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   // 1. Fetch Area Data
   const { data: areaData, isLoading } = useQuery({
@@ -63,8 +65,21 @@ const AreaPage: React.FC = () => {
   // 4. Handlers
   const handleAdd = () => {
     setEditingId(null);
-    form.resetFields();
-    setIsModalOpen(true);
+    setIsModalOpen(true); // 1. Mở Modal lên trước
+
+    // 2. Dùng setTimeout để đẩy việc điền dữ liệu xuống cuối hàng đợi (sau khi Modal đã render xong)
+    setTimeout(() => {
+        form.resetFields(); // Xóa trắng form cũ
+        
+        // Kiểm tra xem user có tồn tại không từ store
+        if (user && user.id) {
+            console.log("Auto-filling ManagerID:", user.id); // Log để kiểm tra
+            
+            form.setFieldsValue({
+                managerId: user.id // 3. Điền ID vào ô input
+            });
+        }
+    }, 100); // Chờ 100ms (rất nhanh mắt thường không thấy)
   };
 
   const handleEdit = (record: Area) => {
@@ -146,6 +161,10 @@ const AreaPage: React.FC = () => {
 
           <Form.Item name="name" label="Tên Khu Vực" rules={[{ required: true }]}>
             <Input placeholder="Ví dụ: Tòa nhà Alpha" />
+          </Form.Item>
+
+          <Form.Item name="managerId" label="Manager ID" rules={[{ required: true }]} hidden>
+            <Input placeholder="ID người quản lý khu vực" />
           </Form.Item>
           
           <div style={{ textAlign: 'right' }}>
