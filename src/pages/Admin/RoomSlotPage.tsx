@@ -3,7 +3,13 @@ import { Table, Button, Modal, Form, Select, DatePicker, Tag, Space, message, Po
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs, { Dayjs } from 'dayjs';
-import { facilityService, type RoomSlot, SLOT_STATUS, SLOT_TYPES} from '@/services/facility.service';
+import { 
+  facilityService, 
+  RoomSlotTypeEnum, 
+  RoomSlotStatusEnum, 
+  getSlotTypeLabel, 
+  getSlotStatusLabel 
+} from '@/services/facility.service';
 
 const RoomSlotPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,48 +41,41 @@ const RoomSlotPage: React.FC = () => {
   // Hàm sinh danh sách các request từ form
   const generateBulkPayloads = (values: any) => {
     const payloads: any[] = [];
+    
+    // values.slotType và values.status giờ sẽ là NUMBER (0, 1...) do Form Select
     const { roomId, slotType, status } = values;
 
     if (activeTab === 'single') {
-      // Logic cũ: Tạo 1 slot
       const [start, end] = values.singleTimeRange;
       payloads.push({
-        roomId, slotType, status,
+        roomId, 
+        slotType: Number(slotType), // Đảm bảo là số
+        status: Number(status),     // Đảm bảo là số
         startTime: start.toISOString(),
         endTime: end.toISOString(),
       });
     } else {
-      // Logic mới: Tạo theo học kỳ
-      const [semStart, semEnd] = values.semesterRange; // DatePicker (Ngày)
-      const [timeStart, timeEnd] = values.timeSlot;    // TimePicker (Giờ)
-      const selectedDays = values.daysOfWeek;          // Mảng [1, 3, 5] (Thứ 2, 4, 6)
+      // Logic loop giữ nguyên
+      const [semStart, semEnd] = values.semesterRange;
+      const [timeStart, timeEnd] = values.timeSlot;
+      const selectedDays = values.daysOfWeek;
 
       let currentDate = dayjs(semStart).startOf('day');
       const endDate = dayjs(semEnd).endOf('day');
 
-      // Vòng lặp từ ngày bắt đầu đến kết thúc
       while (currentDate.isBefore(endDate) || currentDate.isSame(endDate)) {
-        // dayjs().day() trả về: 0 (CN), 1 (T2), ..., 6 (T7)
         if (selectedDays.includes(currentDate.day())) {
-          
-          // Ghép Ngày của currentDate + Giờ của timeSlot
-          const startDateTime = currentDate
-            .hour(timeStart.hour())
-            .minute(timeStart.minute())
-            .second(0);
-            
-          const endDateTime = currentDate
-            .hour(timeEnd.hour())
-            .minute(timeEnd.minute())
-            .second(0);
+          const startDateTime = currentDate.hour(timeStart.hour()).minute(timeStart.minute()).second(0);
+          const endDateTime = currentDate.hour(timeEnd.hour()).minute(timeEnd.minute()).second(0);
 
           payloads.push({
-            roomId, slotType, status,
+            roomId, 
+            slotType: Number(slotType), // Gửi số
+            status: Number(status),     // Gửi số
             startTime: startDateTime.toISOString(),
             endTime: endDateTime.toISOString(),
           });
         }
-        // Tăng thêm 1 ngày
         currentDate = currentDate.add(1, 'day');
       }
     }

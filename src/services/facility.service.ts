@@ -3,17 +3,34 @@ import type { ApiResponse, PaginatedResult } from '@/types/backend';
 import dayjs from 'dayjs';
 
 // --- Enums ---
-export const SLOT_TYPES = {
-  BLOCK3: 'Block3',
-  BLOCK10: 'Block10'
+// 1. Định nghĩa ENUM dạng số (để gửi lên API)
+export const RoomSlotTypeEnum = {
+  Block3: 0,  // Giả định 0 là Block 3 (Lecture)
+  Block10: 1  // Giả định 1 là Block 10
+} as const;
+export type RoomSlotTypeEnum = typeof RoomSlotTypeEnum[keyof typeof RoomSlotTypeEnum];
+
+export const RoomSlotStatusEnum = {
+  Available: 0,
+  Booked: 1,
+  Maintenance: 2,
+  Cancelled: 3 // Nếu có
+} as const;
+export type RoomSlotStatusEnum = typeof RoomSlotStatusEnum[keyof typeof RoomSlotStatusEnum];
+
+// 2. Helper map từ String (API trả về) sang Label hiển thị
+export const getSlotTypeLabel = (type: string | number) => {
+  if (type === 'Block3' || type === 0) return 'Block 3';
+  if (type === 'Block10' || type === 1) return 'Block 10';
+  return 'Khác';
 };
 
-export const SLOT_STATUS = {
-  AVAILABLE: 'Available',
-  BOOKED: 'Booked',
-  MAINTENANCE: 'Maintenance' // Giả định status này, nếu BE trả khác thì sửa sau
+export const getSlotStatusLabel = (status: string | number) => {
+  if (status === 'Available' || status === 0) return 'Available (Trống)';
+  if (status === 'Booked' || status === 1) return 'Booked (Đã đặt)';
+  if (status === 'Maintenance' || status === 2) return 'Maintenance (Bảo trì)';
+  return 'Unknown';
 };
-
 // --- Interface cho Campus ---
 export interface Campus {
   id: string;
@@ -102,8 +119,8 @@ export interface RoomSlotCreateRequest {
   roomId: string;
   startTime: string;
   endTime: string;
-  slotType: string; // <-- Sửa thành string để gửi lên "Block3"
-  status: string;   // <-- Sửa thành string để gửi lên "Available"
+  slotType: number;
+  status: number;   
 }
 
 // --- Service ---
@@ -186,13 +203,13 @@ export const facilityService = {
 
   // === ROOM SLOT ===
   // [cite: 92-95]
-  getRoomSlots: async (params?: { page?: number; size?: number; keyword?: string }) => {
-    return axiosClient.get<any, ApiResponse<PaginatedResult<RoomSlot>>>('/RoomSlot', { params });
+  getRoomSlots: async (params?: any) => {
+    return axiosClient.get<any, ApiResponse<PaginatedResult<any>>>('/RoomSlot', { params });
   },
 
   // [cite: 99-101]
   createRoomSlot: async (data: RoomSlotCreateRequest) => {
-    return axiosClient.post<any, ApiResponse<RoomSlot>>('/RoomSlot', data);
+    return axiosClient.post<any, ApiResponse<any>>('/RoomSlot', data);
   },
 
   // [cite: 80-83]
