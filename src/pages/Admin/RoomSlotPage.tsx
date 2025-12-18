@@ -321,11 +321,9 @@ const RoomSlotPage: React.FC = () => {
              </Form.Item>
              
              <Form.Item name="status" label="Trạng thái" style={{ flex: 1 }}>
-                <Select>
+                <Select disabled>
                     {/* Value là Số (Integer) */}
                     <Select.Option value={RoomSlotStatusEnum.Available}>Available (Trống)</Select.Option>
-                    <Select.Option value={RoomSlotStatusEnum.Maintenance}>Maintenance (Bảo trì)</Select.Option>
-                    <Select.Option value={RoomSlotStatusEnum.Booked}>Booked (Đã đặt)</Select.Option>
                 </Select>
              </Form.Item>
           </div>

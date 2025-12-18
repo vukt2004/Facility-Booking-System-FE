@@ -9,7 +9,8 @@ import {
   LogoutOutlined,
   AppstoreAddOutlined,
   InsertRowLeftOutlined,
-  ClockCircleOutlined
+  ClockCircleOutlined,
+  TeamOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -33,13 +34,19 @@ const AdminLayout: React.FC = () => {
   // Menu items
   const menuItems = [
     {
+      key: '/admin/users',
+      icon: <TeamOutlined />,
+      label: 'Quản lý Users',
+      onClick: () => navigate('/admin/users'),
+    },
+    {
       key: '/admin/campus',
       icon: <BankOutlined />,
       label: 'Quản lý Campus',
       onClick: () => navigate('/admin/campus'),
     },
     {
-      key: '/admin/area', // Chúng ta sẽ làm trang này sau
+      key: '/admin/area', 
       icon: <AppstoreOutlined />,
       label: 'Quản lý Khu vực',
       onClick: () => navigate('/admin/area'),
@@ -58,7 +65,7 @@ const AdminLayout: React.FC = () => {
     },
     {
       key: '/admin/slots',
-      icon: <ClockCircleOutlined />, // Import icon này từ @ant-design/icons
+      icon: <ClockCircleOutlined />,
       label: 'Quản lý Slot',
       onClick: () => navigate('/admin/slots'),
     },

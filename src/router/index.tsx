@@ -16,6 +16,7 @@ import LandingPage from "@/pages/General/LandingPage";
 import ProtectedRoute from "./ProtectedRoute"; // Import Component bảo vệ
 import MainLayout from "@/components/layout/MainLayout"; // Layout có Header cho User
 import BookingApprovalPage from "@/pages/Admin/BookingApprovalPage";
+import UserPage from "@/pages/Admin/UserPage";
 
 export const router = createBrowserRouter([
   // --- PUBLIC ROUTES (Ai cũng vào được) ---
@@ -49,8 +50,9 @@ export const router = createBrowserRouter([
           { path: "slots", element: <RoomSlotPage /> },
           { 
             path: "bookings", 
-            element: <BookingApprovalPage /> // Thay thế cho cái div "Coming soon" trước đây 
+            element: <BookingApprovalPage />
           },
+          { path: "users", element: <UserPage /> },
         ]
       }
     ]
