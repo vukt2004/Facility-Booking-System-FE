@@ -13,7 +13,7 @@ const LandingPage: React.FC = () => {
 
   const handleAction = () => {
     if (isAuthenticated) {
-      if (user?.role === 2) navigate('/admin/dashboard');
+      if (user?.role === 0) navigate('/admin/dashboard');
       else navigate('/booking');
     } else {
       navigate('/login');

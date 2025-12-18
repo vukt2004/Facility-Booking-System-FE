@@ -46,7 +46,7 @@ const Login: React.FC = () => {
             if (userInfo.roleId === 0) { // Admin
                 navigate('/admin/dashboard');
             } else {
-                navigate('/');
+                navigate('/booking');
             }
         } else {
             message.error('Token không hợp lệ');

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout, Menu, Avatar, Dropdown, Space, theme, Button } from 'antd';
 import { UserOutlined, LogoutOutlined, HistoryOutlined, CalendarOutlined, DownOutlined } from '@ant-design/icons';
-import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const { Header, Content, Footer } = Layout;
@@ -129,8 +129,8 @@ const MainLayout: React.FC = () => {
         </Space>
       </Header>
 
-      <Content style={{ padding: '24px 50px', backgroundColor: '#f5f5f5' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', minHeight: 380 }}>
+      <Content style={{ padding: '24px 36px', backgroundColor: 'transparent' }}>
+        <div style={{ maxWidth: 2400, margin: '0 auto', minHeight: 380 }}>
             {/* Đây là nơi nội dung BookingPage / MyBookingPage hiển thị */}
             <Outlet />
         </div>
