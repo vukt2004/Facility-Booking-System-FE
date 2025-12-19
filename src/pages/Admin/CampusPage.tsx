@@ -5,11 +5,13 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilityService, type Campus, type CampusCreateRequest } from '@/services/facility.service';
 import { handleAfterDelete } from '@/utils/pagination';
+import { useCascadingDelete } from '@/hooks/useCascadingDelete';
 
 const CampusPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form] = Form.useForm();
+  const { handleDelete } = useCascadingDelete();
   
   // State quản lý phân trang
   const [pagination, setPagination] = useState({
@@ -60,7 +62,6 @@ const CampusPage: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => facilityService.deleteCampus(id),
     onSuccess: () => {
-      message.success('Đã xóa Campus');
       handleAfterDelete(
         queryClient,
         ['campuses'],
@@ -84,8 +85,9 @@ const CampusPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
+  const onDeleteClick = (campusId: string) => {
+    // Chỉ cần gọi 1 dòng này, toàn bộ logic check con/xóa con sẽ tự chạy
+    handleDelete(campusId, 'Campus');
   };
 
   const handleCloseModal = () => {
@@ -136,9 +138,12 @@ const CampusPage: React.FC = () => {
             icon={<EditOutlined style={{ color: 'blue' }} />} 
             onClick={() => handleEdit(record)}
           />
-          <Popconfirm title="Bạn chắc chắn muốn xóa?" onConfirm={() => handleDelete(record.id)}>
-            <Button type="text" icon={<DeleteOutlined style={{ color: 'red' }} />} />
-          </Popconfirm>
+          <Button 
+            danger
+            type='text' 
+            icon={<DeleteOutlined />} 
+            onClick={() => onDeleteClick(record.id)} 
+          />
         </Space>
       ),
     },

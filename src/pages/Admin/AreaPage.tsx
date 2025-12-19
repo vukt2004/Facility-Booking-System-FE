@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilityService, type Area, type AreaCreateRequest } from '@/services/facility.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { handleAfterDelete } from '@/utils/pagination';
+import { useCascadingDelete } from '@/hooks/useCascadingDelete';
 
 const AreaPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,6 +15,7 @@ const AreaPage: React.FC = () => {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const { handleDelete } = useCascadingDelete();
 
   // 1. Fetch Area Data
   const { data: areaData, isLoading } = useQuery({
@@ -108,6 +110,11 @@ const AreaPage: React.FC = () => {
     }
   };
 
+  const onDeleteClick = (id: string) => {
+    handleDelete(id, 'Area', () => {
+    });
+  };
+
   const columns = [
     { title: 'Tên Khu Vực', dataIndex: 'name', key: 'name' },
     { 
@@ -126,9 +133,12 @@ const AreaPage: React.FC = () => {
       render: (_: any, record: Area) => (
         <Space size="middle">
           <Button type="text" icon={<EditOutlined style={{ color: 'blue' }} />} onClick={() => handleEdit(record)} />
-          <Popconfirm title="Xóa khu vực này?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="text" icon={<DeleteOutlined style={{ color: 'red' }} />} />
-          </Popconfirm>
+          <Button 
+                danger
+                type='text' 
+                icon={<DeleteOutlined />} 
+                onClick={() => onDeleteClick(record.id)} 
+            />
         </Space>
       ),
     },

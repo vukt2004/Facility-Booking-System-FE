@@ -4,6 +4,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilityService, type Room, type RoomCreateRequest } from '@/services/facility.service';
 import { handleAfterDelete } from '@/utils/pagination';
+import { useCascadingDelete } from '@/hooks/useCascadingDelete';
 
 const RoomPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -11,6 +12,7 @@ const RoomPage: React.FC = () => {
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const queryClient = useQueryClient();
+  const { handleDelete } = useCascadingDelete();
 
   // 1. Fetch Dữ liệu chính: ROOMS
   const { data: roomData, isLoading } = useQuery({
@@ -98,6 +100,9 @@ const RoomPage: React.FC = () => {
       createMutation.mutate(values);
     }
   };
+  const onDeleteClick = (id: string) => {
+    handleDelete(id, 'Room');
+  };
 
   // 5. Columns Configuration
   const columns = [
@@ -130,9 +135,12 @@ const RoomPage: React.FC = () => {
       render: (_: any, record: Room) => (
         <Space size="middle">
           <Button type="text" icon={<EditOutlined style={{ color: 'blue' }} />} onClick={() => handleEdit(record)} />
-          <Popconfirm title="Xóa phòng này?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="text" icon={<DeleteOutlined style={{ color: 'red' }} />} />
-          </Popconfirm>
+          <Button 
+                danger
+                type='text' 
+                icon={<DeleteOutlined />} 
+                onClick={() => onDeleteClick(record.id)} 
+            />
         </Space>
       ),
     },

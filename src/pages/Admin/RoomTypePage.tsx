@@ -5,6 +5,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { facilityService, type RoomType, type RoomTypeCreateRequest } from '@/services/facility.service';
 import { handleAfterDelete } from '@/utils/pagination';
+import { useCascadingDelete } from '@/hooks/useCascadingDelete';
 
 const RoomTypePage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,6 +13,7 @@ const RoomTypePage: React.FC = () => {
   const [form] = Form.useForm();
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const queryClient = useQueryClient();
+  const { handleDelete } = useCascadingDelete();
 
   // 1. Fetch Data
   const { data: apiResponse, isLoading } = useQuery({
@@ -86,6 +88,11 @@ const RoomTypePage: React.FC = () => {
     }
   };
 
+    const onDeleteClick = (typeId: string) => {
+    // Logic sẽ tự tìm Room thuộc Type này -> Tìm Slot thuộc Room đó -> Xóa hết
+    handleDelete(typeId, 'RoomType');
+  };
+
   const columns = [
     { title: 'Tên Loại Phòng', dataIndex: 'name', key: 'name' },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
@@ -95,9 +102,12 @@ const RoomTypePage: React.FC = () => {
       render: (_: any, record: RoomType) => (
         <Space size="middle">
           <Button type="text" icon={<EditOutlined style={{ color: 'blue' }} />} onClick={() => handleEdit(record)} />
-          <Popconfirm title="Xóa loại phòng này?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="text" icon={<DeleteOutlined style={{ color: 'red' }} />} />
-          </Popconfirm>
+          <Button 
+            danger
+            type='text' 
+            icon={<DeleteOutlined />} 
+            onClick={() => onDeleteClick(record.id)} 
+          />
         </Space>
       ),
     },
